@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Schools by District</title>
+</head>
+<body>
+<h2>Select a District and we will print the schools in that district</h2>
+<form method="get">
+    {{ form.as_p }}
+    <button type="submit">Filter</button>
+</form>
+
+{% if schools %}
+<ul>
+    {% for school in schools %}
+    <li>{{ school.name }} - {{ school.address }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No schools to show.</p>
+{% endif %}
+
+</body>
+</html>

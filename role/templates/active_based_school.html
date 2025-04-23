@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Schools By Active</title>
+</head>
+<body>
+    <h2>Select a District and we will print the schools in that district</h2>
+    <form method="get">
+        {{ form.as_p }}
+        <button type="submit">Show School</button>
+    </form>
+    {% if schools %}
+        <h3>Schools in Selected District are</h3>
+        <ul>
+            {% for school in schools %}
+            <li>
+                {{ school.name|capfirst }}({{ school.address }})
+            </li>
+            {% endfor %}
+        </ul>
+    {% elif schools is not None %}
+    <h2>No School Found in Selected District</h2>
+    {% endif %}
+</body>
+</html>
