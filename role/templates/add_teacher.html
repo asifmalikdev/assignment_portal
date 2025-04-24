@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="card p-4 shadow-lg" style="max-width: 700px; margin: auto;">
+            <h1 class="text-center mb-4 text-primary">Add a New Teacher</h1>
+            <form method="POST" id="teacher-form">
+                {% csrf_token %}
+
+                <!-- Select School -->
+                <div class="form-group">
+                    <label for="id_school" class="font-weight-bold text-secondary">Select School</label>
+                    {{ form.school|add_class:"form-control" }}
+                </div>
+
+                <!-- Assigned Classes -->
+                <div class="form-group">
+                    <label for="id_assigned_classes" class="font-weight-bold text-secondary">Assigned Classes</label>
+                    {{ form.assigned_classes|add_class:"form-control" }}
+                </div>
+
+                <!-- Teacher Name -->
+                <div class="form-group">
+                    <label for="id_name" class="font-weight-bold text-secondary">Teacher Name</label>
+                    {{ form.name|add_class:"form-control" }}
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="id_email" class="font-weight-bold text-secondary">Email</label>
+                    {{ form.email|add_class:"form-control" }}
+                </div>
+
+                <!-- Subject -->
+                <div class="form-group">
+                    <label for="id_subject" class="font-weight-bold text-secondary">Subject</label>
+                    {{ form.subject|add_class:"form-control" }}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-success btn-block py-2 mt-3">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const schoolSelect = document.querySelector('#id_school');
+            if (schoolSelect) {
+                schoolSelect.addEventListener('change', function () {
+                    this.form.submit();  // submits the form so Django reloads it with updated classes
+                });
+            }
+        });
+    </script>
+{% endblock %}

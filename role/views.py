@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
-from .forms import RoleForm
+from .forms import RoleForm, ClassForm, SchoolForm, DistrictForm, TeacherForm, AddStudentForm
+from .models import District,  Student
 
 def add_role(request):
     if request.method == "POST":
@@ -11,8 +12,6 @@ def add_role(request):
         form = RoleForm()
     return render(request, "forms.html", {"form": form})
 
-from .models import District
-from .forms import DistrictForm
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
 
@@ -23,7 +22,6 @@ class District_Create_View(CreateView):
     template_name = "district_form.html"
     success_url = reverse_lazy('admin')
 
-from .forms import SchoolForm
 def add_school(request):
     if request.method=="POST":
         form = SchoolForm(request.POST)
@@ -34,6 +32,45 @@ def add_school(request):
         form = SchoolForm()
 
     return render(request, "add_school.html", {"form":form})
+
+def add_class(request):
+    if request.method == "POST":
+        form = ClassForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('add_class')
+
+    else:
+        form = ClassForm()
+    return render(request, 'add_class.html', {'form': form})
+
+
+def add_teacher(request):
+    if request.method == "POST":
+        form = TeacherForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('teacher_list')
+    else:
+        form = TeacherForm()
+    return render(request, 'add_teacher.html', {'form': form})
+
+def add_student(request):
+    if request.method =="POST":
+        form = AddStudentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('add_student')
+
+    else:
+        form = AddStudentForm()
+
+    return render(request, 'add_student.html', {'form':form})
+
+
+
+
+
 
 
 from django.views import View
@@ -51,5 +88,4 @@ class DistrictBasedView(View):
             if is_active_only:
                 schools = schools.filter(is_active=True)
         return render(request, self.template_name, {'form':form, 'schools':schools})
-
 

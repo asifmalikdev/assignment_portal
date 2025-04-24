@@ -1,22 +1,14 @@
 from django.contrib import admin
-from .models import Assignment, AssignmentSubmission, AssignmentMark
-
+from .models import Assignment, Submission
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'teacher', 'subject', 'classroom', 'due_time', 'created_at')
-    list_filter = ('subject', 'teacher', 'classroom')
-    search_fields = ('title', 'description')
+    list_display = ('id', 'title','assigned_by','assigned_to', 'due_date', 'created_at',)
+    search_fields = ('title', 'description',)
+    list_filter = ('assigned_to', 'assigned_by', 'due_date',)
 
 
-@admin.register(AssignmentSubmission)
-class AssignmentSubmissionAdmin(admin.ModelAdmin):
-    list_display = ('assignment', 'student', 'submitted_at', 'status')
-    list_filter = ('status', 'submitted_at')
-    search_fields = ('assignment__title', 'student__user__username')
-
-
-@admin.register(AssignmentMark)
-class AssignmentMarkAdmin(admin.ModelAdmin):
-    list_display = ('submission', 'marks', 'marked_by', 'marked_at')
-    list_filter = ('marked_by', 'marked_at')
-    search_fields = ('submission__assignment__title', 'submission__student__user__username')
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+    list_display = ('assignment', 'student', 'submitted_at', 'marks',)
+    search_fields = ('assignment_title', 'student_name',)
+    list_filter = ('submitted_at', 'marks')

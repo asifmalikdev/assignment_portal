@@ -85,25 +85,22 @@ class Class(models.Model):
 class Teacher(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, verbose_name="Teacher name")
-    email = models.EmailField(unique=True)
-    subject = models.CharField(max_length=255, null=True, blank=True)
-    assigned_classes =models.ManyToManyField(Class, related_name="class_teacher")
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    school = models.ForeignKey(School, on_delete=CASCADE, related_name="School_Teacher")
+    assigned_classes = models.ManyToManyField(Class, related_name="class_teacher")  # fixed name here
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default = True, verbose_name = "Is Active")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
 
     def __str__(self):
         return f"{self.name} - {self.email}"
+
     def clean(self):
         self.name = self.name.strip()
-        if len(self.name)<3:
-            raise ValidationError("Teacher name must contain atleast 3 character")
+        if len(self.name) < 3:
+            raise ValidationError("Teacher name must contain at least 3 characters.")
         if not re.match(r'^[a-zA-Z\s]+$', self.name):
-            raise ValidationError("Name can have just spaces and Letter")
-        for assigned_class in self.assigned_classes.all():
-            if not assigned_class.is_active:
-                raise ValidationError("Cannot assign teacher to an inactive class.")
-            if not assigned_class.school.is_active:
-                raise ValidationError("Cannot assign teacher to an inactive school's class.")
+            raise ValidationError("Name can contain only letters and spaces.")
 
 
 

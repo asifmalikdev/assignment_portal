@@ -1,61 +1,45 @@
+from django.utils import timezone
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CASCADE
 
-from users.models import TeacherProfile, StudentProfile
-from schools.models import SchoolClass
-from subjects.models import Subject
+from role.models import Class, Teacher, Student
+
+
+def validate_due_date(value):
+    if value<timezone.now().date():
+        raise ValidationError("Due date can't be in past")
 
 
 class Assignment(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(TeacherProfile, on_delete=models.CASCADE)
-    classroom = models.ForeignKey(SchoolClass, on_delete=CASCADE)
-    due_time = models.TimeField(default="23:59:00")  # ✅ ISO 8601 time string
+    id = models.AutoField(primary_key = True)
+    title = models.CharField(max_length=255, verbose_name="Title ")
+    description = models.TextField(verbose_name="Description")
+    due_date = models.DateField(validators=[validate_due_date])
     created_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now=True)
+    assigned_by = models.ForeignKey(Teacher, on_delete=CASCADE, related_name="Assigner")
+    assigned_to = models.ForeignKey(Class, on_delete=CASCADE, related_name="Assigned_Teacher")
 
     def __str__(self):
-        return f"{self.title} ({self.classroom.name})"
+        return f"{self.title} - {self.assigned_to.name}"
 
-
-class AssignmentSubmission(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('submitted', 'Submitted'),
-        ('late', 'Late'),
-    )
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
-    assignment = models.ForeignKey(Assignment, on_delete=CASCADE)
-    submitted_file = models.FileField(upload_to='submissions/')
+class Submission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=CASCADE, related_name="submissions")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    file = models.FileField(upload_to="submissions/")
     submitted_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    marks = models.PositiveIntegerField(null=True, blank=True)
+
+    def clean(self):
+        if self.assignment and self.assignment.due_date < timezone.now().date():
+            raise ValidationError("Submission is past the due date")
+        if Submission.objects.filter(assignment=self.assignment, student=self.student).exclude(pk=self.pk).exists():
+            raise ValidationError("You have already submited this file")
 
     def __str__(self):
-        return f"{self.student.user.username} - {self.assignment.title}"
-
-
-
-class AssignmentMark(models.Model):
-    submission = models.OneToOneField(AssignmentSubmission, on_delete=models.CASCADE)
-    marks = models.IntegerField()
-    feedback = models.TextField(blank=True)
-    marked_by = models.ForeignKey(TeacherProfile, on_delete=models.CASCADE)
-    marked_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Marks for {self.submission.student.user.username} - {self.submission.assignment.title}"
-
-
-
-
-
-
-
-
-
-
-
+        return f"{self.student.name}, {self.assignment.title}"
 
 
 
