@@ -55,22 +55,11 @@ def add_teacher(request):
         form = TeacherForm()
     return render(request, 'add_teacher.html', {'form': form})
 
-def add_student(request):
-    if request.method =="POST":
-        form = AddStudentForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('add_student')
-
-    else:
-        form = AddStudentForm()
-
-    return render(request, 'add_student.html', {'form':form})
-
-
-
-
-
+class AddStudentView(CreateView):
+    model = Student
+    form_class = AddStudentForm
+    template_name = 'add_student.html'
+    success_url = reverse_lazy('add_student')
 
 
 from django.views import View

@@ -1,9 +1,7 @@
 import re
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CASCADE
 from django.core.exceptions import ValidationError
-from django.template.defaultfilters import default
 
 
 def validate_grade_level(value):

@@ -3,7 +3,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CASCADE
-
 from role.models import Class, Teacher, Student
 
 
@@ -22,26 +21,55 @@ class Assignment(models.Model):
     assigned_by = models.ForeignKey(Teacher, on_delete=CASCADE, related_name="Assigner")
     assigned_to = models.ForeignKey(Class, on_delete=CASCADE, related_name="Assigned_Teacher")
 
+
+    def clean(self):
+        if self.assigned_by and self.assigned_to:
+            if not self.assigned_by.assigned_classes.filter(pk=self.assigned_to.pk).exists():
+                raise ValidationError("Teacher is Not Assigned to this class")
     def __str__(self):
         return f"{self.title} - {self.assigned_to.name}"
 
+
+
+
+
+
+def submission_file_path(instance, filename):
+    return f'submissions/class_{instance.assignment.assigned_to.id}/assignment_{instance.assignment.id}/student_{instance.submitted_by.id}/{filename}'
+
+
 class Submission(models.Model):
-    assignment = models.ForeignKey(Assignment, on_delete=CASCADE, related_name="submissions")
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    file = models.FileField(upload_to="submissions/")
+    id = models.AutoField(primary_key=True)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    submitted_by = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='submissions')
     submitted_at = models.DateTimeField(auto_now_add=True)
-    marks = models.PositiveIntegerField(null=True, blank=True)
+    file = models.FileField(upload_to=submission_file_path)
+    comment = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('assignment', 'submitted_by')  # Prevent multiple submissions
 
     def clean(self):
+        errors = {}
+
+        if self.assignment and self.submitted_by:
+            student_class = self.submitted_by.student_class
+            if student_class != self.assignment.assigned_to:
+                errors['submitted_by'] = "This student does not belong to the class this assignment was assigned to."
+
+        # Validate: Submission must be before due date
         if self.assignment and self.assignment.due_date < timezone.now().date():
-            raise ValidationError("Submission is past the due date")
-        if Submission.objects.filter(assignment=self.assignment, student=self.student).exclude(pk=self.pk).exists():
-            raise ValidationError("You have already submited this file")
+            errors['assignment'] = "This assignment's due date has passed. Submission not allowed."
+
+        # Validate: File is required
+        if not self.file:
+            errors['file'] = "A file must be uploaded with the submission."
+
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
-        return f"{self.student.name}, {self.assignment.title}"
-
-
+        return f"{self.assignment.title} - {self.submitted_by.name}"
 
 
 
