@@ -23,15 +23,12 @@ class Assignment(models.Model):
 
 
     def clean(self):
-        if self.assigned_by and self.assigned_to:
+
+        if self.assigned_by_id and self.assigned_to_id:
             if not self.assigned_by.assigned_classes.filter(pk=self.assigned_to.pk).exists():
                 raise ValidationError("Teacher is Not Assigned to this class")
     def __str__(self):
         return f"{self.title} - {self.assigned_to.name}"
-
-
-
-
 
 
 def submission_file_path(instance, filename):
@@ -52,13 +49,15 @@ class Submission(models.Model):
     def clean(self):
         errors = {}
 
-        if self.assignment and self.submitted_by:
-            student_class = self.submitted_by.student_class
-            if student_class != self.assignment.assigned_to:
+        # Validate: Student belongs to the same class the assignment is assigned to
+        if self.assignment_id and self.submitted_by_id:
+            student_class_id = self.submitted_by.student_class_id
+            assigned_class_id = self.assignment.assigned_to_id
+            if student_class_id != assigned_class_id:
                 errors['submitted_by'] = "This student does not belong to the class this assignment was assigned to."
 
         # Validate: Submission must be before due date
-        if self.assignment and self.assignment.due_date < timezone.now().date():
+        if self.assignment_id and self.assignment.due_date < timezone.now().date():
             errors['assignment'] = "This assignment's due date has passed. Submission not allowed."
 
         # Validate: File is required
@@ -70,13 +69,3 @@ class Submission(models.Model):
 
     def __str__(self):
         return f"{self.assignment.title} - {self.submitted_by.name}"
-
-
-
-
-
-
-
-
-
-

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container">
+  <h2>School Dashboard</h2>
+
+  <!-- Search Form -->
+  <form method="get" class="form-inline mb-3">
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search School" class="form-control mr-2" />
+    <button class="btn btn-secondary">Search</button>
+  </form>
+
+  <div class="card mb-4">
+    <div class="card-header">{{ editing|yesno:"Edit School,Add New School" }}</div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {% if editing %}
+          <input type="hidden" name="edit_id" value="{{ edit_id }}">
+        {% endif %}
+        <button class="btn btn-success">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>District</th>
+        <th>Principal</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for school in schools %}
+      <tr>
+        <td>{{ school.name }}</td>
+        <td>{{ school.district.name }}</td>
+        <td>{{ school.principal }}</td>
+        <td>
+          <a href="?edit={{ school.id }}" class="btn btn-sm btn-warning">Edit</a>
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="delete" value="{{ school.id }}">
+            <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No schools found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

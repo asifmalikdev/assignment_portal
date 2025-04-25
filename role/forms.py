@@ -2,7 +2,7 @@ from rest_framework.exceptions import ValidationError
 
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import Role, District, School, Class, Student
+from .models import Role, District, School, Class, Student,Teacher
 
 class RoleForm(forms.ModelForm):
     class Meta:
@@ -20,7 +20,7 @@ class DistrictForm(forms.ModelForm):
 class SchoolForm(forms.ModelForm):
     class Meta:
         model = School
-        fields = ['name', 'address','district', 'is_active']
+        fields = ['name', 'address','district', 'principal', 'is_active']
 
 class ClassForm(forms.ModelForm):
     class Meta:
@@ -40,12 +40,9 @@ class DistrictFilterForm(forms.Form):
         label="Only show active schools"
     )
 
-from django import forms
-from .models import Teacher
 
 
-from django import forms
-from .models import Teacher, Class
+
 
 
 class TeacherForm(forms.ModelForm):
@@ -99,6 +96,7 @@ class AddStudentForm(forms.ModelForm):
                 if student_class.school != school:
                     raise ValidationError("Selected Class does not belong to the selected school")
 
+            return cleaned_data
 
 
 

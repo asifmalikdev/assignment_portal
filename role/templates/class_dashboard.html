@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container my-4">
+    <h2 class="mb-4">Class Management</h2>
+
+    <!-- Search and Filter -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-5">
+            <input type="text" name="search" class="form-control" placeholder="Search class..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-5">
+            <select name="school" class="form-select">
+                <option value="">All Schools</option>
+                {% for school in schools %}
+                    <option value="{{ school.id }}" {% if school.id|stringformat:"s" == school_filter %}selected{% endif %}>
+                        {{ school.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <!-- Add Class Form -->
+    <div class="card mb-4">
+        <div class="card-header">Add Class</div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success">Add Class</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing Classes Table -->
+    <h4>Existing Classes</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>School</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cls in classes %}
+                    <tr>
+                        <td>{{ cls.name }}</td>
+                        <td>{{ cls.grade_level }}</td>
+                        <td>{{ cls.school.name }}</td>
+                        <td>{{ cls.is_active }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-warning me-1" onclick="openEditModal({{ cls.id }}, '{{ cls.name }}', {{ cls.grade_level }}, {{ cls.school.id }}, {{ cls.is_active|yesno:'true,false' }})">
+                                Edit
+                            </button>
+                            <form method="post" action="{% url 'delete_class' cls.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete" value="1">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editForm">
+        {% csrf_token %}
+        <input type="hidden" name="edit" value="1">
+        <input type="hidden" name="class_id" id="edit_class_id">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editModalLabel">Edit Class</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="edit_name" class="form-label">Name</label>
+                <input type="text" class="form-control" name="name" id="edit_name">
+            </div>
+            <div class="mb-3">
+                <label for="edit_grade" class="form-label">Grade Level</label>
+                <input type="number" class="form-control" name="grade_level" id="edit_grade">
+            </div>
+            <div class="mb-3">
+                <label for="edit_school" class="form-label">School</label>
+                <select name="school" class="form-select" id="edit_school">
+                    {% for school in schools %}
+                        <option value="{{ school.id }}">{{ school.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="is_active" id="edit_active">
+                <label class="form-check-label" for="edit_active">Active</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap Modal Script -->
+<script>
+function openEditModal(id, name, grade, school, is_active) {
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    const form = document.getElementById('editForm');
+    form.action = `/role/class/edit/${id}/`;
+
+    document.getElementById('edit_class_id').value = id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_grade').value = grade;
+    document.getElementById('edit_school').value = school;
+    document.getElementById('edit_active').checked = is_active === 'true';
+
+    modal.show();
+}
+</script>
+
+{% endblock %}

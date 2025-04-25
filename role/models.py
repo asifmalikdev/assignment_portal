@@ -2,6 +2,7 @@ import re
 from django.db import models
 from django.db.models import CASCADE
 from django.core.exceptions import ValidationError
+from numpy.ma.extras import unique
 
 
 def validate_grade_level(value):
@@ -47,6 +48,7 @@ class School(models.Model):
     id = models.AutoField(primary_key = True)
     name = models.CharField(max_length=255, unique=True, verbose_name="School")
     address = models.TextField(verbose_name="Address")
+    principal = models.CharField(max_length=255)
     district = models.ForeignKey(District, on_delete=CASCADE, related_name="school_district")
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True, verbose_name="Is Active")

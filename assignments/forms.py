@@ -17,8 +17,13 @@ class AssignmentForm(forms.ModelForm):
         cleaned_data = super().clean()
         teacher = cleaned_data.get('assigned_by')
         class_ = cleaned_data.get('assigned_to')
+        if not teacher:
+            raise ValidationError("Select the teacher who is assigning")
+        if not class_:
+            raise ValidationError("Select the class please")
         if teacher and class_ and not teacher.assigned_classes.filter(id = class_.id).exists():
             raise ValidationError("Teacher Can only assign to their own classes")
+
         return cleaned_data
 
 
