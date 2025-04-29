@@ -53,11 +53,11 @@ class SubmissionForm(forms.ModelForm):
         submitted_by = cleaned_data.get('submitted_by')
 
         if assignment and submitted_by:
-            # ✅ Check if assignment is still open
+            #date validation
             if assignment.due_date < timezone.now().date():
                 raise ValidationError("The due date for this assignment has passed.")
 
-            # ✅ Ensure student belongs to the class assigned the assignment
+            #student check on class
             if submitted_by.student_class != assignment.assigned_to:
                 raise ValidationError("This student is not in the class assigned to this assignment.")
 

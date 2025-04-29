@@ -25,7 +25,7 @@ class District_Create_View(CreateView):
     model = District
     form_class = DistrictForm
     template_name = "district_form.html"
-    success_url = reverse_lazy('admin')
+    success_url = reverse_lazy('add_district')
 
 
 class SchoolDashboardView(TemplateView):
@@ -215,21 +215,11 @@ class StudentDashboardView(TemplateView):
         context['form'] = form
         return self.render_to_response(context)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from rest_framework import viewsets
+from .serializers import StudentSerializer
+class StudentViewSet(viewsets.ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
 
 
 

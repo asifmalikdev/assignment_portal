@@ -1,9 +1,17 @@
-from django.urls import path
+
+from django.db import router
+from django.urls import path, include
 from . import views
+from .admin import StudentAdmin
 from .forms import AddStudentForm
+
 from .views import (District_Create_View, DistrictBasedView,
                     SchoolDashboardView, ClassDashboardView,
-                    TeacherDashboardView, StudentDashboardView)
+                    TeacherDashboardView, StudentDashboardView, StudentViewSet)
+from rest_framework.routers import DefaultRouter
+router = DefaultRouter()
+router.register(r'students', StudentViewSet, basename='student' )
+
 
 urlpatterns = [
     path("add/", views.add_role, name="add"),
@@ -15,5 +23,6 @@ urlpatterns = [
     path("class/edit/<int:class_id>/", ClassDashboardView.as_view(), name="edit_class"),
     path('teacher_dashboard/', TeacherDashboardView.as_view() , name="teacher_dashboard"),
     path('student_dashboard/', StudentDashboardView.as_view(), name="student_dashboard"),
+    path('api/', include(router.urls))
 
 ]

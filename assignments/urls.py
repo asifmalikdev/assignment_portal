@@ -1,8 +1,8 @@
 from django.urls import path
 
-from .views import AssignmentDashboardView, SubmissionCreateView
+from .views import AssignmentDashboardView, SubmissionDashboardView
 
 urlpatterns = [
     path('assignment_dashboard/', AssignmentDashboardView.as_view(), name='assignment_dashboard'),
-    path("submit_assign/", SubmissionCreateView.as_view(), name="submit_assign"),
+    path("submission_dashboard/", SubmissionDashboardView.as_view(), name="submission_dashboard"),
 ]

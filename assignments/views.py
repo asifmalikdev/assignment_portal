@@ -1,3 +1,4 @@
+from cloudinit.config.schema import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
@@ -6,6 +7,9 @@ from django.db.models import Q
 from role.models import Class, Teacher
 from .models import Assignment, Submission
 from .forms import AssignmentForm, SubmissionForm
+from django.views import View
+from django.contrib import messages
+from django.utils import timezone
 
 
 class AssignmentDashboardView(TemplateView):
@@ -64,8 +68,44 @@ class AssignmentDashboardView(TemplateView):
         return render(request, self.template_name, context)
 
 
-class SubmissionCreateView(CreateView):
-    model = Submission
-    form_class = SubmissionForm
-    template_name = 'submission_form.html'
-    success_url = reverse_lazy('submit_assign')
+class SubmissionDashboardView(View):
+    template_name = 'submission_dashboard.html'
+    def get(self, request):
+        form = SubmissionForm()
+        submissions = Submission.objects.select_related('assignment', 'submitted_by').all()
+
+
+        # we will use it later filter only current student's submissions
+        # submissions = submissions.filter(submitted_by=request.user.student)
+        context ={
+            'form': form,
+            'submissions':submissions
+        }
+        return  render(request, self.template_name, )
+
+    def post(self, request):
+        if 'delete_id' in request.POST:
+            submission_id = request.POST.get('delete_id')
+            submission = get_object_or_404(Submission, id = submission_id)
+            submission.delete()
+            messages.success(request, "submission deleted successfully")
+            return redirect('submission_dashboard')
+        form = SubmissionForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, 'submission was successfully')
+                return redirect('submission_dashboard')
+            except ValidationError as e:
+                form.add_error(None, e)
+        else:
+            messages.error(request, 'Please correct the error below')
+
+
+        submissions = Submission.objects.select_related('assignment', 'submitted_by').all()
+        context = {
+            'form':form,
+            'submissions': submissions
+        }
+        return render(request, self.template_name, context)
+
