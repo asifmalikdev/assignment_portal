@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CASCADE
 from role.models import Class, Teacher, Student
+from django.contrib import admin
 
 
 # ------------------ VALIDATORS ------------------
@@ -12,38 +13,17 @@ def validate_due_date(value):
         raise ValidationError("Due date can't be in the past.")
 
 
-# ------------------ ASSIGNMENT ------------------
-
-class Assignment(models.Model):
-    id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=255, verbose_name="Title")
-    description = models.TextField(verbose_name="Description")
-    due_date = models.DateField(validators=[validate_due_date])
-    created_at = models.DateTimeField(auto_now_add=True)
-    update_at = models.DateTimeField(auto_now=True)
-
-    # Previously you stored assignment_type here. Removed — now handled per question.
-    assigned_by = models.ForeignKey(Teacher, on_delete=CASCADE, related_name="assigned_assignments")
-    assigned_to = models.ForeignKey(Class, on_delete=CASCADE, related_name="class_assignments")
-
-    def clean(self):
-        if self.assigned_by_id and self.assigned_to_id:
-            if not self.assigned_by.assigned_classes.filter(pk=self.assigned_to.pk).exists():
-                raise ValidationError("This teacher is not assigned to the selected class.")
-
-    def __str__(self):
-        return f"{self.title} - {self.assigned_to.name}"
 
 
 class AssignmentQuestion(models.Model):
     QUESTION_TYPE_CHOICES = [
+        ('LONG', 'Long Question'),
+        ('SHORT', 'Short Question'),
         ('MCQ', 'Multiple Choice'),
-        ('DESC', 'Descriptive'),
     ]
-
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='questions')
-    question_type = models.CharField(max_length=4, choices=QUESTION_TYPE_CHOICES)
-    question_text = models.TextField()
+    teacher = models.ForeignKey(Teacher, on_delete=CASCADE,related_name='questions')
+    question_type = models.CharField(max_length=5, choices=QUESTION_TYPE_CHOICES)
+    text = models.TextField()
     marks = models.PositiveIntegerField()
 
     # MCQ fields (optional if not MCQ)
@@ -57,17 +37,68 @@ class AssignmentQuestion(models.Model):
         blank=True,
         null=True
     )
-
+    created_at = models.DateTimeField(auto_now_add=True)
     def clean(self):
         if self.question_type == 'MCQ':
             if not all([self.option_a, self.option_b, self.option_c, self.option_d, self.correct_option]):
                 raise ValidationError("All options and the correct answer must be provided for an MCQ question.")
-        elif self.question_type == 'DESC':
+        else:
             if any([self.option_a, self.option_b, self.option_c, self.option_d, self.correct_option]):
-                raise ValidationError("Descriptive questions should not have options or correct answer.")
+                raise ValidationError('Options are only allowed for MCQ')
 
     def __str__(self):
-        return f"{self.get_question_type_display()}: {self.question_text[:50]}"
+        return f"{self.get_question_type_display()}: {self.text}"
+
+
+
+class Assignment(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Title")
+    description = models.TextField(verbose_name="Description", blank=True)
+    due_date = models.DateField(validators=[validate_due_date])
+    created_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(Teacher, on_delete=CASCADE, related_name="assigned_assignments")
+    assigned_to = models.ForeignKey(Class, on_delete=CASCADE, related_name="class_assignments")
+    questions = models.ManyToManyField(AssignmentQuestion, related_name='assignments')
+
+
+    def clean(self):
+        if self.assigned_by and self.assigned_to:
+            if not self.assigned_by.assigned_classes.filter(pk=self.assigned_to.pk).exists():
+                raise ValidationError("This teacher is not assigned to the selected class.")
+        if self.pk and self.questions.exists():
+            print('hello asif i am here -------------\n----------------\n------------\n-------------\n')
+            invalid_questions = self.questions.exclude(teacher=self.assigned_by)
+            if invalid_questions.exists():
+                raise ValidationError("One or More Questions are not from Question book of this teacher")
+    def __str__(self):
+        return f"{self.title} for {self.assigned_to.name} by {self.assigned_by.name} "
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def submission_file_path(instance, filename):
     return f'submissions/class_{instance.assignment.assigned_to.id}/assignment_{instance.assignment.id}/student_{instance.submitted_by.id}/{filename}'
 
