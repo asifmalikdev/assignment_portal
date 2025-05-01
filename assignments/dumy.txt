@@ -1,0 +1,32 @@
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+    form = AssignmentAdminForm
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # After M2M is saved
+        assignment = form.instance
+        invalid_questions = assignment.questions.exclude(teacher=assignment.assigned_by)
+        if invalid_questions.exists():
+            raise ValidationError("Selected questions contain some that do not belong to the selected teacher.")
+
+class AssignmentAdminForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if 'assigned_by' in self.data:
+            try:
+                teacher_id = int(self.data.get('assigned_by'))
+                self.fields['questions'].queryset = AssignmentQuestion.objects.filter(teacher_id=teacher_id)
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            self.fields['questions'].queryset = AssignmentQuestion.objects.filter(teacher=self.instance.assigned_by)
+        else:
+            self.fields['questions'].queryset = AssignmentQuestion.objects.none()
+
+

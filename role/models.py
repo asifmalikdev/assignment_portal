@@ -85,7 +85,7 @@ class Class(models.Model):
 class Teacher(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, verbose_name="Teacher name")
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     subject = models.CharField(max_length=255)
     school = models.ForeignKey(School, on_delete=CASCADE, related_name="School_Teacher")
     assigned_classes = models.ManyToManyField(Class, related_name="class_teacher")  # fixed name here
@@ -133,10 +133,3 @@ class Student(models.Model):
             raise ValidationError("Cannot Assign Student to inactive class")
         if self.student_class.school != self.school:
             raise ValidationError("Class does not belong to the selected school.")
-
-
-
-
-
-
-

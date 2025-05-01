@@ -14,7 +14,6 @@ def validate_due_date(value):
 
 
 
-
 class AssignmentQuestion(models.Model):
     QUESTION_TYPE_CHOICES = [
         ('LONG', 'Long Question'),
@@ -22,6 +21,7 @@ class AssignmentQuestion(models.Model):
         ('MCQ', 'Multiple Choice'),
     ]
     teacher = models.ForeignKey(Teacher, on_delete=CASCADE,related_name='questions')
+    assigned_class = models.ForeignKey(Class, on_delete=CASCADE, related_name='questions',)
     question_type = models.CharField(max_length=5, choices=QUESTION_TYPE_CHOICES)
     text = models.TextField()
     marks = models.PositiveIntegerField()
@@ -38,6 +38,8 @@ class AssignmentQuestion(models.Model):
         null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+
     def clean(self):
         if self.question_type == 'MCQ':
             if not all([self.option_a, self.option_b, self.option_c, self.option_d, self.correct_option]):
@@ -45,12 +47,14 @@ class AssignmentQuestion(models.Model):
         else:
             if any([self.option_a, self.option_b, self.option_c, self.option_d, self.correct_option]):
                 raise ValidationError('Options are only allowed for MCQ')
+        if not self.teacher.assigned_classes.filter(pk=self.assigned_class.pk).exists():
+            raise ValidationError("This teacher is not assigned to the selected class.")
 
     def __str__(self):
         return f"{self.get_question_type_display()}: {self.text}"
 
 
-
+from django.db import transaction
 class Assignment(models.Model):
     title = models.CharField(max_length=255, verbose_name="Title")
     description = models.TextField(verbose_name="Description", blank=True)
@@ -58,82 +62,82 @@ class Assignment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     assigned_by = models.ForeignKey(Teacher, on_delete=CASCADE, related_name="assigned_assignments")
     assigned_to = models.ForeignKey(Class, on_delete=CASCADE, related_name="class_assignments")
-    questions = models.ManyToManyField(AssignmentQuestion, related_name='assignments')
+    questions = models.ManyToManyField(
+        AssignmentQuestion,
+        through='AssignmentQuestionThrough',
+        related_name='assignments')
 
 
     def clean(self):
+        print('but hameed is here not asif')
+
         if self.assigned_by and self.assigned_to:
             if not self.assigned_by.assigned_classes.filter(pk=self.assigned_to.pk).exists():
                 raise ValidationError("This teacher is not assigned to the selected class.")
-        if self.pk and self.questions.exists():
-            print('hello asif i am here -------------\n----------------\n------------\n-------------\n')
-            invalid_questions = self.questions.exclude(teacher=self.assigned_by)
-            if invalid_questions.exists():
-                raise ValidationError("One or More Questions are not from Question book of this teacher")
+
+        # print('hello asif i am here -------------\n----------------\n------------\n-------------\n')
+        # invalid_questions = self.questions.exclude(teacher=self.assigned_by)
+        # if invalid_questions.exists():
+        #     raise ValidationError("One or More Questions are not from Question book of this teacher")
+        # invalid_questions_for_class = self.questions.exclude(assigned_class= self.assigned_to)
+        # print("debuger ---------------------------------------\n")
+        # if invalid_questions_for_class.exists():
+        #     raise ValidationError("one or more question are not for this class")
+
+
     def __str__(self):
         return f"{self.title} for {self.assigned_to.name} by {self.assigned_by.name} "
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
 
+            invalid_questions = self.questions.exclude(teacher = self.assigned_by)
+            if invalid_questions:
+                raise ValidationError("one or more questions are not from this teacher's question book")
 
+            invalid_class_questions = self.questions.exclude(assigned_class = self.assigned_to)
+            if invalid_class_questions.exists():
+                raise ValidationError("one or more questions are not intended for this class")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def submission_file_path(instance, filename):
-    return f'submissions/class_{instance.assignment.assigned_to.id}/assignment_{instance.assignment.id}/student_{instance.submitted_by.id}/{filename}'
-
-
-class Submission(models.Model):
-    id = models.AutoField(primary_key=True)
-    assignment = models.ForeignKey(Assignment, on_delete=CASCADE, related_name='submissions')
-    submitted_by = models.ForeignKey(Student, on_delete=CASCADE, related_name='submissions')
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    file = models.FileField(upload_to=submission_file_path)
-    comment = models.TextField(blank=True, null=True)
+class AssignmentQuestionThrough(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='question_links')
+    question = models.ForeignKey(AssignmentQuestion, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('assignment', 'submitted_by')  # One submission per student per assignment
+        unique_together = ('assignment', 'question')
 
-    def clean(self):
-        errors = {}
-
-        # Validate: Student must belong to the assigned class
-        if self.assignment_id and self.submitted_by_id:
-            student_class_id = self.submitted_by.student_class_id
-            assigned_class_id = self.assignment.assigned_to_id
-            if student_class_id != assigned_class_id:
-                errors['submitted_by'] = "This student does not belong to the class this assignment is assigned to."
-
-        # Validate: Submission must be before due date
-        if self.assignment_id and self.assignment.due_date < timezone.now().date():
-            errors['assignment'] = "This assignment's due date has passed. Submission not allowed."
-
-        # Validate: File must be uploaded
-        if not self.file:
-            errors['file'] = "A file must be uploaded with the submission."
-
-        if errors:
-            raise ValidationError(errors)
-
+class AssignmentAttempt(models.Model):
+    student = models.ForeignKey(Student, on_delete=CASCADE, related_name='assignment_attempts')
+    assignment = models.ForeignKey(Assignment, on_delete=CASCADE, related_name='attempt')
+    started_at  = models.DateTimeField(auto_now_add=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    is_submitted = models.BooleanField(default=False)
+    class Meta:
+        unique_together = ('student', 'assignment')
     def __str__(self):
-        return f"{self.assignment.title} - {self.submitted_by.name}"
+        return f'{self.student.name}  → {self.assignment.title}'
+
+class Answer(models.Model):
+    attempt = models.ForeignKey(AssignmentAttempt, on_delete=CASCADE, related_name="answers")
+    question = models.ForeignKey(AssignmentQuestion, on_delete=CASCADE)
+    selected_option = models.CharField(
+        max_length=1,
+        choices=[('a', 'A'), ('b', 'B'), ('c', 'C'), ('d', 'D')],
+        blank = True,
+        null=True
+    )
+    answer_text = models.TextField(blank=True, null=True)
+
+    is_correct = models.BooleanField(null=True, blank=True)
+    marks_awarded = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('attempt', 'question')
+    def auto_mark(self):
+        if self.question_type == 'MCQ':
+            self.is_correct = self.selected_option == self.question.correct_option
+            self.marks_awarded = self.question.marks if self.is_correct else 0
+    def __str__(self):
+        return f"{self.attempt.student.name}'s answer to Q{self.question.id}"

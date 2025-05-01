@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Assignment Questions Dashboard</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" name="create" class="btn btn-primary mb-3">Add Question</button>
+</form>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Question</th>
+            <th>Type</th>
+            <th>Marks</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for question in questions %}
+        <tr>
+            <td>{{ question.text }}</td>
+            <td>{{ question.get_question_type_display }}</td>
+            <td>{{ question.marks }}</td>
+            <td>
+                <!-- Edit form -->
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" name="edit" value="{{ question.id }}" class="btn btn-warning btn-sm">Edit</button>
+                </form>
+
+                <!-- Delete form -->
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" name="delete" value="{{ question.id }}" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No questions available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
