@@ -1,6 +1,4 @@
 from rest_framework.exceptions import ValidationError
-
-from django.core.exceptions import ValidationError
 from django import forms
 from .models import Role, District, School, Class, Student,Teacher
 
@@ -65,21 +63,6 @@ class TeacherForm(forms.ModelForm):
                 pass
         elif self.instance.pk and self.instance.school:
             self.fields['assigned_classes'].queryset = self.instance.school.School_Classes.all()
-
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     school = cleaned_data.get('school')
-    #     assigned_classes = cleaned_data.get('assigned_classes')
-    #
-    #     if school and assigned_classes:
-    #         invalid_classes = assigned_classes.exclude(school=school)
-    #         if invalid_classes.exists():
-    #             raise forms.ValidationError(
-    #                 f"Some selected classes do not belong to the selected school: "
-    #                 f"{', '.join([cls.name for cls in invalid_classes])}"
-    #             )
-
-        # return cleaned_data
 
 
 class AddStudentForm(forms.ModelForm):

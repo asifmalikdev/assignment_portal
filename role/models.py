@@ -68,8 +68,9 @@ class Class(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
     class Meta:
-        unique_together = ('name', 'school')
-
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'school'], name='unique_class_per_school')
+        ]
     def clean(self):
         self.name = self.name.strip()
 

@@ -53,58 +53,6 @@ class AssignmentAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-#
-# @admin.register(Assignment)
-# class AssignmentAdmin(admin.ModelAdmin):
-#     form = AssignmentAdminForm
-#     list_display = ('title', 'assigned_to', 'assigned_by', 'due_date')
-#     list_filter = ('assigned_to', 'assigned_by')
-#     search_fields = ('title',)
-#     filter_horizontal = ('questions',)
-#
-#     inlines = [AssignmentQuestionThroughInline]
-#
-#     def get_queryset(self, request):
-#         qs = super().get_queryset(request)
-#         if request.user.is_superuser:
-#             return qs
-#         return qs.filter(assigned_by__user=request.user)
-#
-#     def save_model(self, request, obj, form, change):
-#         if not request.user.is_superuser and not obj.assigned_by_id:
-#             obj.assigned_by = request.user.teacher
-#         # Only run full_clean on fields except M2M
-#         obj.full_clean(exclude=['questions'])
-#         super().save_model(request, obj, form, change)
-#
-#     def save_related(self, request, form, formsets, change):
-#         super().save_related(request, form, formsets, change)
-#         obj = form.instance
-
-
-# @admin.register(Assignment)
-# class AssignmentAdmin(admin.ModelAdmin):
-#     form = AssignmentAdminForm
-#     list_display = ('title', 'assigned_to', 'assigned_by', 'due_date')
-#     list_filter = ('assigned_to', 'assigned_by')
-#     search_fields = ('title',)
-#     filter_horizontal = ('questions',)
-#
-#     inlines = [AssignmentQuestionThroughInline]
-#
-#     def get_queryset(self, request):
-#         qs = super().get_queryset(request)
-#         if request.user.is_superuser:
-#             return qs
-#         return qs.filter(assigned_by__user=request.user)
-#
-#     def save_model(self, request, obj, form, change):
-#         if not request.user.is_superuser and not obj.assigned_by_id:
-#             obj.assigned_by = request.user.teacher
-#         obj.full_clean()
-#         super().save_model(request, obj, form, change)
-#
-
 @admin.register(AssignmentQuestion)
 class AssignmentQuestionAdmin(admin.ModelAdmin):
     list_display = ('text', 'teacher', 'marks', 'question_type', 'created_at')

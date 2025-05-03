@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<h2>Filter Assignments (Unsubmitted)</h2>
+
+<form method="get">
+    <label for="class_id">Select Class:</label>
+    <select name="class_id" id="class_id" onchange="this.form.submit()">
+        <option value="">-- Select Class --</option>
+        {% for cls in classes %}
+            <option value="{{ cls.id }}" {% if cls.id|stringformat:"s" == selected_class %}selected{% endif %}>{{ cls.name }}</option>
+        {% endfor %}
+    </select>
+
+    {% if students %}
+        <label for="student_id">Select Student:</label>
+        <select name="student_id" id="student_id" onchange="this.form.submit()">
+            <option value="">-- Select Student --</option>
+            {% for student in students %}
+                <option value="{{ student.id }}" {% if student.id|stringformat:"s" == selected_student %}selected{% endif %}>
+                    {{ student.name }}
+                </option>
+            {% endfor %}
+        </select>
+    {% endif %}
+</form>
+
+{% if assignments %}
+    <h3>Unsubmitted Assignments</h3>
+    {% for assignment in assignments %}
+        <form method="POST" action="{% url 'submit-assignment' assignment.id %}">
+            {% csrf_token %}
+            <h4>{{ assignment.title }}</h4>
+            <p><strong>Due:</strong> {{ assignment.due_date }}</p>
+            <ul>
+                {% for question in assignment.questions.all %}
+                    <li>
+                        <p><strong>Q{{ forloop.counter }}:</strong> {{ question.text }} ({{ question.get_question_type_display }})</p>
+
+                        {% if question.question_type == "MCQ" %}
+                            <label><input type="radio" name="q_{{ question.id }}" value="a"> {{ question.option_a }}</label><br>
+                            <label><input type="radio" name="q_{{ question.id }}" value="b"> {{ question.option_b }}</label><br>
+                            <label><input type="radio" name="q_{{ question.id }}" value="c"> {{ question.option_c }}</label><br>
+                            <label><input type="radio" name="q_{{ question.id }}" value="d"> {{ question.option_d }}</label><br>
+                        {% else %}
+                            <textarea name="q_{{ question.id }}" rows="3" cols="60" placeholder="Write your answer here..."></textarea>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <input type="hidden" name="student_id" value="{{ selected_student }}">
+            <button type="submit">Submit Assignment</button>
+        </form>
+        <hr>
+    {% endfor %}
+{% endif %}
+
+
+    </ul>
+{% if selected_class and selected_student %}
+    <p>🎉 No pending assignments for this student!</p>
+{% endif %}
+{% endblock %}

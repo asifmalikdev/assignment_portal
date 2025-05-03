@@ -1,10 +1,14 @@
 
 from django.urls import path
-from .views import AssignmentDashboardView, AssignmentQuestionDashboardView
+from .views import AssignmentDashboardView, AssignmentQuestionDashboardView,  FilteredAssignmentView, SubmitAssignmentView
 
 urlpatterns = [
+
     path('assignments/', AssignmentDashboardView.as_view(), name='assignment_dashboard'),
     path('questions/', AssignmentQuestionDashboardView.as_view(), name='submission_dashboard'),
+    path('filter-assignments/', FilteredAssignmentView.as_view(), name = 'filter-assignments'),
+    path('submit-assignment/<int:assignment_id>/', SubmitAssignmentView.as_view(), name='submit-assignment'),
+
 ]
 
 

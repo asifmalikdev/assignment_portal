@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'role',
     'assignments',
     'widget_tweaks',
+    'users',
+    'schools',
+    'subjects'
 
 ]
 

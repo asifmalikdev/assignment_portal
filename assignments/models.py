@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CASCADE
 from role.models import Class, Teacher, Student
+from users.models import UserProfile as User
 from django.contrib import admin
 
 
@@ -141,3 +142,14 @@ class Answer(models.Model):
             self.marks_awarded = self.question.marks if self.is_correct else 0
     def __str__(self):
         return f"{self.attempt.student.name}'s answer to Q{self.question.id}"
+
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    submitted_file = models.FileField(upload_to='submissions/')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default='Submitted')
+
+    def __str__(self):
+        return f"{self.assignment.assignment_title} - {self.student.username}"
